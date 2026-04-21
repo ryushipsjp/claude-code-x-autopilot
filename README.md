@@ -52,6 +52,8 @@ Post (dry-run default — prints what *would* be sent, posts nothing):
 python -m x_autopilot.post drafts/2026-04-21.md
 # really ship it:
 python -m x_autopilot.post drafts/2026-04-21.md --publish
+# cron it without looking like a bot:
+python -m x_autopilot.post drafts/2026-04-21.md --publish --jitter-minutes 30
 ```
 
 ## Safety defaults
@@ -59,6 +61,9 @@ python -m x_autopilot.post drafts/2026-04-21.md --publish
 - **Dry-run is ON by default** on `post`. Explicit `--publish` flag required.
 - **Approval gate** reads the draft file mtime; you must re-save the file
   after reviewing before `post` will accept it.
+- **Anti-automation jitter.** 15-45s random sleep between thread blocks, and
+  optional `--jitter-minutes N` for a uniform 0..N-minute delay before the
+  first post. Keeps cron-scheduled publishing off X's "obvious bot" radar.
 - **Voice guide is yours.** Edit `prompts/manifesto.md` to match your brand.
   Nothing ships through generic Claude defaults.
 

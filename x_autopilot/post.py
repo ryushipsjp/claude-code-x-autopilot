@@ -5,12 +5,16 @@ Safety model:
 - Dry-run is the default. `--publish` must be passed explicitly.
 - Each `---`-separated block in the body becomes one post. If there is more
   than one block, subsequent posts are sent as replies to form a thread.
+- Anti-automation jitter: 15-45s random sleep between thread blocks, and
+  optional `--jitter-minutes N` to randomize first-post time under cron.
 """
 from __future__ import annotations
 
 import argparse
 import os
+import random
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -19,6 +23,8 @@ from x_autopilot.x_client import build_session, delete_tweet, post_tweet, tweet_
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_POST_CHARS = 280
+INTER_BLOCK_DELAY_MIN_S = 15.0
+INTER_BLOCK_DELAY_MAX_S = 45.0
 
 
 def parse_draft(path: Path) -> tuple[dict[str, str], list[str]]:
@@ -59,11 +65,19 @@ def validate(fm: dict[str, str], blocks: list[str]) -> None:
 
 
 def publish(blocks: list[str]) -> list[str]:
-    """Post blocks as a thread. On any failure, roll back already-posted blocks."""
+    """Post blocks as a thread. On any failure, roll back already-posted blocks.
+
+    Sleeps a random 15-45s between thread blocks to avoid the back-to-back
+    posting cadence that X's automation detection flags.
+    """
     session = build_session()
     ids: list[str] = []
     try:
         for i, block in enumerate(blocks, 1):
+            if i > 1:
+                delay = random.uniform(INTER_BLOCK_DELAY_MIN_S, INTER_BLOCK_DELAY_MAX_S)
+                print(f"post.py: sleeping {delay:.1f}s before block {i} (anti-automation jitter)")
+                time.sleep(delay)
             reply_to = ids[-1] if ids else None
             ids.append(post_tweet(session, block, reply_to=reply_to))
     except RuntimeError as e:
@@ -92,7 +106,17 @@ def main() -> None:
         action="store_true",
         help="Actually hit the X API. Without this flag, runs in dry-run mode.",
     )
+    parser.add_argument(
+        "--jitter-minutes",
+        type=float,
+        default=0.0,
+        metavar="N",
+        help="Sleep a uniform-random 0..N minutes before the first post. Use in cron "
+        "runs to decorrelate your real post time from the schedule tick.",
+    )
     args = parser.parse_args()
+    if args.jitter_minutes < 0:
+        raise SystemExit("post.py: --jitter-minutes must be >= 0.")
 
     fm, blocks = parse_draft(args.draft)
     validate(fm, blocks)
@@ -104,6 +128,11 @@ def main() -> None:
             print(block)
         print("\npost.py: rerun with --publish to actually ship.")
         return
+
+    if args.jitter_minutes > 0:
+        jitter_s = random.uniform(0, args.jitter_minutes * 60)
+        print(f"post.py: pre-publish jitter — sleeping {jitter_s:.0f}s ({jitter_s/60:.1f} min).")
+        time.sleep(jitter_s)
 
     ids = publish(blocks)
     handle = os.getenv("X_HANDLE", "example_user")
