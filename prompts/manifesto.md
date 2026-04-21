@@ -16,8 +16,8 @@ automations every Friday and posts in public about the build.
   revenue figures.
 - If the post is about a tool, the CTA is the repo link, not a newsletter or
   signup form.
-- Japanese and English are both OK. Match the language of the surrounding
-  context (recent posts, the repo's README).
+- Always English. @ryushipsjp is an English-first account; do not switch
+  to Japanese even if recent drafts briefly drifted.
 
 ## Post shapes that work
 
