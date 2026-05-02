@@ -6,6 +6,12 @@ Generates daily X post drafts that match **your** voice — not generic AI slop.
 Review in your terminal. Ship with one keystroke. Dry-run by default so nothing
 goes out without you.
 
+## Get the Code
+
+> Full source code is available on Gumroad — includes repo zip, voice tuning guide, and support.
+>
+> **[→ Get the code ($59)](https://whsiky.gumroad.com/l/mlbhkq)**
+
 > Dogfooded on [@ryushipsjp](https://x.com/ryushipsjp) to keep the "ship every Friday"
 > manifesto alive without burning a founder's brain on thread-drafting.
 
